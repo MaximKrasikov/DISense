@@ -7,6 +7,8 @@ import android.widget.EditText
 import android.widget.TextView
 import com.example.disense.R
 import com.example.disense.data.repository.UserRepositoryImpl
+import com.example.disense.data.storage.UserStorage
+import com.example.disense.data.storage.sharedprefs.SharedPrefUserStorage
 import com.example.disense.domain.models.SaveUserNameParam
 import com.example.disense.domain.models.UserName
 import com.example.disense.domain.usecase.GetUserNameUseCase
@@ -14,14 +16,18 @@ import com.example.disense.domain.usecase.SaveUserNameUseCase
 
 class MainActivity : Activity() {
 
-    private val userRepository by lazy(LazyThreadSafetyMode.NONE) { UserRepositoryImpl(context = applicationContext) }
+    private val userRepository by lazy(LazyThreadSafetyMode.NONE) {
+        UserRepositoryImpl(
+            userStorage = SharedPrefUserStorage(context = applicationContext)
+        )
+    }
     private val getUserNameUseCase by lazy(LazyThreadSafetyMode.NONE) {
-        GetUserNameUseCase(
+        com.example.disense.domain.usecase.GetUserNameUseCase(
             userRepository = userRepository
         )
     }
     private val saveUserNameUseCase by lazy(LazyThreadSafetyMode.NONE) {
-        SaveUserNameUseCase(
+        com.example.disense.domain.usecase.SaveUserNameUseCase(
             userRepository = userRepository
         )
     }
@@ -37,12 +43,12 @@ class MainActivity : Activity() {
 
         sendButton.setOnClickListener {
             val text = dataTextView.text.toString()
-            val params = SaveUserNameParam(name = text)
+            val params = com.example.disense.domain.models.SaveUserNameParam(name = text)
             val result: Boolean = saveUserNameUseCase.execute(params = params)
             dataTextView.text = "Save result = $result"
         }
         receiveButton.setOnClickListener {
-            val userName: UserName = getUserNameUseCase.execute()
+            val userName: com.example.disense.domain.models.UserName = getUserNameUseCase.execute()
             dataTextView.text = "${userName.firstName} ${userName.lastName}"
         }
 

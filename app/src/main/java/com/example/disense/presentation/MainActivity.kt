@@ -1,55 +1,40 @@
 package com.example.disense.presentation
-
-import android.app.Activity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import com.example.disense.R
 import com.example.disense.data.repository.UserRepositoryImpl
-import com.example.disense.data.storage.UserStorage
 import com.example.disense.data.storage.sharedprefs.SharedPrefUserStorage
-import com.example.disense.domain.models.SaveUserNameParam
 import com.example.disense.domain.models.UserName
-import com.example.disense.domain.usecase.GetUserNameUseCase
-import com.example.disense.domain.usecase.SaveUserNameUseCase
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
-    private val userRepository by lazy(LazyThreadSafetyMode.NONE) {
-        UserRepositoryImpl(
-            userStorage = SharedPrefUserStorage(context = applicationContext)
-        )
-    }
-    private val getUserNameUseCase by lazy(LazyThreadSafetyMode.NONE) {
-        com.example.disense.domain.usecase.GetUserNameUseCase(
-            userRepository = userRepository
-        )
-    }
-    private val saveUserNameUseCase by lazy(LazyThreadSafetyMode.NONE) {
-        com.example.disense.domain.usecase.SaveUserNameUseCase(
-            userRepository = userRepository
-        )
-    }
-
+    private lateinit var vm : MainViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.acvtivity_main)
+
+        vm =ViewModelProvider(this, MainViewModelFactory(this)).get(MainViewModel::class.java)
 
         val dataTextView = findViewById<TextView>(R.id.dataTextView)
         val dataEditView = findViewById<EditText>(R.id.dataEditText)
         val sendButton = findViewById<Button>(R.id.sendButton)
         val receiveButton = findViewById<Button>(R.id.receiveButton)
 
+        vm.resultLive.observe(this, Observer {
+            dataTextView.text = it
+        })
+
         sendButton.setOnClickListener {
-            val text = dataTextView.text.toString()
-            val params = com.example.disense.domain.models.SaveUserNameParam(name = text)
-            val result: Boolean = saveUserNameUseCase.execute(params = params)
-            dataTextView.text = "Save result = $result"
+            val text = dataEditView.text.toString()
+            vm.save(text)
         }
         receiveButton.setOnClickListener {
-            val userName: com.example.disense.domain.models.UserName = getUserNameUseCase.execute()
-            dataTextView.text = "${userName.firstName} ${userName.lastName}"
+            vm.load()
         }
 
     }
